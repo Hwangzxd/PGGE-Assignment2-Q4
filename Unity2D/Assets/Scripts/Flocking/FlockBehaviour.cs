@@ -473,3 +473,34 @@ public class FlockBehaviour : MonoBehaviour
         }
     }
 }
+
+//[BurstCompile]
+//public struct FlockingJob : IJobParallelFor
+//{
+//    public float deltaTime;
+//    public bool useFlocking;
+//    public float tickDuration;
+
+//    [ReadOnly] public NativeArray<Flock> flocks;
+
+//    public void Execute(int index)
+//    {
+//        if (useFlocking)
+//        {
+//            foreach (Flock flock in flocks)
+//            {
+//                List<Autonomous> autonomousList = flock.mAutonomous;
+//                for (int i = 0; i < autonomousList.Count; ++i)
+//                {
+//                    Execute(flock, i);
+//                    if (i % BatchSize == 0)
+//                    {
+//                        yield return null;
+//                    }
+//                }
+//                yield return null;
+//            }
+//        }
+//        yield return new WaitForSeconds(TickDuration);
+//    }
+//}
