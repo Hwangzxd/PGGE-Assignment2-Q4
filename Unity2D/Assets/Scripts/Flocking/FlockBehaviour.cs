@@ -74,18 +74,8 @@ public class FlockBehaviour : MonoBehaviour
         }
     }
 
-    public JobHandle CreateFlockJob()
-    {
-        FlockJob job = new FlockJob();
-        return job.Schedule();
-    }
-
     void Update()
     {
-
-        JobHandle jobHandle = FlockJob();
-        jobHandle.Complete();
-
         HandleInputs();
         Rule_CrossBorder();
         Rule_CrossBorder_Obstacles();
@@ -482,23 +472,4 @@ public class FlockBehaviour : MonoBehaviour
             }
         }
     }
-}
-
-[BurstCompile]
-public struct CreateFlockJob : IJob
-{
-    public Flock flock;
-    public Bounds bounds;
-
-    public void Execute()
-    {
-        for (int i = 0; i < flock.numBoids; ++i)
-        {
-            float x = Random.Range(Bounds.bounds.min.x, Bounds.bounds.max.x);
-            float y = Random.Range(Bounds.bounds.min.y, Bounds.bounds.max.y);
-
-            AddBoid(x, y, flock);
-        }
-    }
-
 }
