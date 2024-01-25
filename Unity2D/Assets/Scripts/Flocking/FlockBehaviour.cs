@@ -18,6 +18,9 @@ public class FlockBehaviour : MonoBehaviour
     [SerializeField]
     BoxCollider2D Bounds;
 
+    [SerializeField]
+    private float randomMotionDelay = 2.0f;
+
     public float TickDuration = 1.0f;
     public float TickDurationSeparationEnemy = 0.1f;
     public float TickDurationRandom = 1.0f;
@@ -25,6 +28,8 @@ public class FlockBehaviour : MonoBehaviour
     public int BoidIncr = 100;
     public bool useFlocking = false;
     public int BatchSize = 100;
+
+    private WaitForSeconds randomMotionRoutineDelay;
 
     public List<Flock> flocks = new List<Flock>();
     void Reset()
@@ -37,6 +42,9 @@ public class FlockBehaviour : MonoBehaviour
 
     void Start()
     {
+        // cached WaitForSeconds for random motion obstacles coroutine
+        randomMotionRoutineDelay = new WaitForSeconds(randomMotionDelay);
+
         // Randomize obstacles placement.
         for (int i = 0; i < Obstacles.Length; ++i)
         {
@@ -123,6 +131,7 @@ public class FlockBehaviour : MonoBehaviour
         return (a1.transform.position - a2.transform.position).magnitude;
     }
 
+    [BurstCompile]
     void Execute(Flock flock, int i)
     {
         Vector3 flockDir = Vector3.zero;
@@ -137,6 +146,7 @@ public class FlockBehaviour : MonoBehaviour
         Vector3 steerPos = Vector3.zero;
 
         Autonomous curr = flock.mAutonomous[i];
+
         for (int j = 0; j < flock.numBoids; ++j)
         {
             Autonomous other = flock.mAutonomous[j];
@@ -161,6 +171,7 @@ public class FlockBehaviour : MonoBehaviour
                 }
             }
         }
+
         if (count > 0)
         {
             speed = speed / count;
@@ -230,7 +241,9 @@ public class FlockBehaviour : MonoBehaviour
                     boids[i].TargetDirection.Normalize();
 
                     boids[i].TargetSpeed += dist * sepWeight;
-                    boids[i].TargetSpeed /= 2.0f;
+                    //boids[i].TargetSpeed /= 2.0f;
+                    // used multiply instead of divide for less expensive calculation
+                    boids[i].TargetSpeed *= 0.5f;
                 }
             }
         }
@@ -293,6 +306,7 @@ public class FlockBehaviour : MonoBehaviour
             yield return null;
         }
     }
+
     IEnumerator Coroutine_Random_Motion_Obstacles()
     {
         while (true)
@@ -322,11 +336,16 @@ public class FlockBehaviour : MonoBehaviour
 
                 float speed = Random.Range(1.0f, autono.MaxSpeed);
                 autono.TargetSpeed += speed;
-                autono.TargetSpeed /= 2.0f;
+                //autono.TargetSpeed /= 2.0f;
+                // used multiply instead of divide for less expensive calculation
+                autono.TargetSpeed *= 0.5f;
             }
-            yield return new WaitForSeconds(2.0f);
+            //yield return new WaitForSeconds(2.0f);
+            // cached WaitForSeconds for the coroutine
+            yield return randomMotionRoutineDelay;
         }
     }
+
     IEnumerator Coroutine_Random()
     {
         while (true)
@@ -360,7 +379,9 @@ public class FlockBehaviour : MonoBehaviour
 
                         float speed = Random.Range(1.0f, autonomousList[i].MaxSpeed);
                         autonomousList[i].TargetSpeed += speed * flock.weightSeparation;
-                        autonomousList[i].TargetSpeed /= 2.0f;
+                        //autonomousList[i].TargetSpeed /= 2.0f;
+                        // used multiply instead of divide for less expensive calculation
+                        autonomousList[i].TargetSpeed *= 0.5f;
                     }
                 }
                 //yield return null;
@@ -368,6 +389,7 @@ public class FlockBehaviour : MonoBehaviour
             yield return new WaitForSeconds(TickDurationRandom);
         }
     }
+
     void Rule_CrossBorder_Obstacles()
     {
         for (int i = 0; i < Obstacles.Length; ++i)
@@ -473,34 +495,3 @@ public class FlockBehaviour : MonoBehaviour
         }
     }
 }
-
-//[BurstCompile]
-//public struct FlockingJob : IJobParallelFor
-//{
-//    public float deltaTime;
-//    public bool useFlocking;
-//    public float tickDuration;
-
-//    [ReadOnly] public NativeArray<Flock> flocks;
-
-//    public void Execute(int index)
-//    {
-//        if (useFlocking)
-//        {
-//            foreach (Flock flock in flocks)
-//            {
-//                List<Autonomous> autonomousList = flock.mAutonomous;
-//                for (int i = 0; i < autonomousList.Count; ++i)
-//                {
-//                    Execute(flock, i);
-//                    if (i % BatchSize == 0)
-//                    {
-//                        yield return null;
-//                    }
-//                }
-//                yield return null;
-//            }
-//        }
-//        yield return new WaitForSeconds(TickDuration);
-//    }
-//}
